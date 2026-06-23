@@ -396,6 +396,10 @@ def main():
     parser.add_argument("--skip-nodes", action="store_true")
     parser.add_argument("--skip-select", action="store_true")
     parser.add_argument("--skip-download", action="store_true")
+    parser.add_argument("--use-prebuilt", action="store_true",
+                        help="Load pre-built env from HF instead of fresh install")
+    parser.add_argument("--env-repo", default="datsss/comfyui-env",
+                        help="HF dataset repo with pre-built env")
     args = parser.parse_args()
 
     # Resolve auth token
@@ -410,8 +414,6 @@ def main():
     # Step 1: Clone ComfyUI (or load prebuilt)
     if args.use_prebuilt:
         comfy_dir = load_prebuilt(workspace, auth_token, args.env_repo)
-        # Skip node install (already in prebuilt)
-        args.skip_nodes = True
     else:
         comfy_dir = clone_comfyui(workspace)
 
