@@ -1,0 +1,80 @@
+# Custom Nodes Configuration
+# Edit this file to add/remove/pin nodes
+# Then run env_setup.ipynb to rebuild environment
+
+comfyui:
+  repo: "https://github.com/comfyanonymous/ComfyUI.git"
+  branch: "master"
+
+nodes:
+  # Core
+  - name: "ComfyUI-Manager"
+    url: "https://github.com/ltdrdata/ComfyUI-Manager.git"
+    branch: "main"
+    required: true
+
+  # IPAdapter
+  - name: "ComfyUI_IPAdapter_plus"
+    url: "https://github.com/cubiq/ComfyUI_IPAdapter_plus.git"
+    branch: "main"
+
+  # ControlNet
+  - name: "comfyui_controlnet_aux"
+    url: "https://github.com/Fannovel16/comfyui_controlnet_aux.git"
+    branch: "main"
+
+  # Impact Pack
+  - name: "ComfyUI-Impact-Pack"
+    url: "https://github.com/ltdrdata/ComfyUI-Impact-Pack.git"
+    branch: "main"
+
+  - name: "ComfyUI-Impact-Subpack"
+    url: "https://github.com/ltdrdata/ComfyUI-Impact-Subpack.git"
+    branch: "main"
+
+  # Custom Scripts
+  - name: "ComfyUI-Custom-Scripts"
+    url: "https://github.com/pythongosssss/ComfyUI-Custom-Scripts.git"
+    branch: "main"
+
+  # Nodes
+  - name: "rgthree-comfy"
+    url: "https://github.com/rgthree/rgthree-comfy.git"
+    branch: "main"
+
+  - name: "ComfyUI-KJNodes"
+    url: "https://github.com/kijai/ComfyUI-KJNodes.git"
+    branch: "main"
+
+  - name: "efficiency-nodes-comfyui"
+    url: "https://github.com/jags111/efficiency-nodes-comfyui.git"
+    branch: "main"
+
+  - name: "ComfyUI_essentials"
+    url: "https://github.com/cubiq/ComfyUI_essentials.git"
+    branch: "main"
+
+  - name: "comfy-image-saver"
+    url: "https://github.com/giriss/comfy-image-saver.git"
+    branch: "main"
+
+  - name: "ComfyUI-mnemic-nodes"
+    url: "https://github.com/MNeMoNiCuZ/ComfyUI-mnemic-nodes.git"
+    branch: "main"
+
+  - name: "comfyui-llm-toolkit"
+    url: "https://github.com/comfy-deploy/comfyui-llm-toolkit.git"
+    branch: "main"
+
+  - name: "ComfyUI_ResolutionSelector"
+    url: "https://github.com/bradsec/ComfyUI_ResolutionSelector.git"
+    branch: "main"
+
+  # Utilities
+  - name: "ComfyUI-to-Python-Extension"
+    url: "https://github.com/pydn/ComfyUI-to-Python-Extension.git"
+    branch: "main"
+
+  - name: "ComfyUI_UltimateSDUpscale"
+    url: "https://github.com/ssitu/ComfyUI_UltimateSDUpscale.git"
+    branch: "main"

@@ -1,0 +1,55 @@
+# ComfyUI Environment Definition
+# Used by env_setup.ipynb to create conda-pack environment
+# Platform-agnostic — conda handles cross-platform deps
+
+name: comfyui
+channels:
+  - pytorch
+  - nvidia
+  - conda-forge
+  - defaults
+
+dependencies:
+  - python=3.11
+  - pip
+
+  # PyTorch + CUDA
+  - pytorch>=2.1.0
+  - torchvision>=0.16.0
+  - torchaudio>=2.1.0
+  - pytorch-cuda=12.1
+
+  # Core
+  - numpy>=1.24.0
+  - Pillow>=10.0.0
+  - scipy>=1.10.0
+  - tqdm>=4.65.0
+  - pyyaml>=6.0
+  - requests>=2.28.0
+  - aiohttp>=3.8.0
+
+  # Image processing
+  - opencv>=4.8.0
+  - scikit-image>=0.21.0
+
+  # ML/AI
+  - safetensors>=0.4.0
+  - accelerate>=0.25.0
+  - transformers>=4.35.0
+  - tokenizers>=0.15.0
+  - sentencepiece>=0.1.99
+
+  # ComfyUI specific
+  - einops>=0.6.0
+  - omegaconf>=2.3.0
+  - protobuf>=4.25.0
+  - psutil>=5.9.0
+
+  # HuggingFace
+  - huggingface_hub>=0.20.0
+  - hf_transfer>=0.1.4
+
+  # pip packages (not in conda)
+  - pip:
+    - comfyui-pip-packages>=1.0.0
+    - latent-preview>=0.1.0
