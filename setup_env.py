@@ -32,7 +32,7 @@ from threading import Thread, Event
 sys.path.insert(0, str(Path(__file__).parent))
 
 from comfyui_setup.config import get_custom_nodes, get_site_packages
-from comfyui_setup.nodes import tar_filter
+from comfyui_setup.nodes import tar_filter, _collect_and_merge_requirements
 from comfyui_setup.ui import Color, setup_logging, print_header, run_cmd, timer
 
 
@@ -192,32 +192,53 @@ def step_install_deps(setup_dir):
             err = r.stderr.strip().splitlines()[-1] if r.stderr else f"exit {r.returncode}"
             log.info(f"  {Color.FAIL}FAIL: {err}{Color.ENDC}")
 
-    # Node pip deps
+    # Node pip deps — collect, merge, and install in single call
     log.info("Installing node dependencies...")
-    pip_args = []
+    req_files = []
     for p in sorted(nodes_dir.iterdir()):
         if p.is_dir():
             req = p / "requirements.txt"
             if req.exists():
-                pip_args.append(str(req))
+                req_files.append(req)
 
-    for i in range(0, len(pip_args), 5):
-        batch = pip_args[i : i + 5]
-        reqs = " ".join([f"-r {r}" for r in batch])
-        batch_num = i // 5 + 1
-        total_batches = (len(pip_args) + 4) // 5
-        log.info(f"  pip batch {batch_num}/{total_batches}...")
+    if req_files:
+        import tempfile
+        merged_lines, conflicts, all_reqs = _collect_and_merge_requirements(req_files)
+        total_pkgs = len(all_reqs)
+        log.info(f"  Collected {total_pkgs} unique packages from {len(req_files)} nodes")
+
+        if conflicts:
+            log.info(f"  {len(conflicts)} packages have multiple version constraints:")
+            for pkg_name, specs in conflicts[:10]:
+                spec_str = ", ".join(f"{node} wants {s}" for node, s in specs)
+                log.info(f"    {pkg_name}: {spec_str}")
+
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".txt", delete=False, prefix="merged_req_") as tmp:
+            tmp.write("\n".join(merged_lines) + "\n")
+            tmp_path = tmp.name
+
+        log.info(f"  Installing merged requirements (single pip call)...")
         result = subprocess.run(
-            f"pip install -q {reqs}",
+            f"pip install --no-cache-dir -q -r {tmp_path}",
             shell=True,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             text=True,
-            timeout=600,
+            timeout=900,
         )
         if result.returncode != 0:
-            for line in (result.stderr or "").strip().splitlines()[-3:]:
+            for line in (result.stderr or "").strip().splitlines()[-10:]:
                 log.warning(f"    {line}")
+            log.warning(f"  {Color.FAIL}pip install failed — see errors above{Color.ENDC}")
+        else:
+            log.info(f"  {Color.OKGREEN}Node dependencies installed ({total_pkgs} packages).{Color.ENDC}")
+
+        try:
+            Path(tmp_path).unlink()
+        except OSError:
+            pass
+    else:
+        log.info("  No node requirements.txt found.")
 
     log.info(f"{Color.OKGREEN}Done: {ok}/{len(nodes)} nodes installed{Color.ENDC}")
 
@@ -296,6 +317,7 @@ def step_package_env():
                     os.symlink(str(item), str(link))
 
             # Pack everything from the stage directory
+            # -h follows symlinks to include actual file content (not symlink pointers)
             log.info("    Compressing site-packages + ComfyUI core (this takes a few minutes)...")
             stop = Event()
             reporter = Thread(
@@ -304,7 +326,7 @@ def step_package_env():
             reporter.start()
             try:
                 subprocess.run(
-                    f"tar -cf - -C {stage_dir} site-packages ComfyUI | {method} -4 > {env_tar}",
+                    f"tar -chf - -C {stage_dir} site-packages ComfyUI | {method} -4 > {env_tar}",
                     shell=True,
                     check=True,
                 )

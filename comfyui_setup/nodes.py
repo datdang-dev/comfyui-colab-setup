@@ -1,7 +1,10 @@
 """Custom node installation — parallel cloning, pip deps, tar filtering, background script."""
 
+import re
 import subprocess
 import sys
+import tempfile
+from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from threading import Thread
@@ -92,8 +95,97 @@ def install_nodes_parallel(nodes_dir=None, max_workers=None):
     return {"ok": ok, "fail": fail, "total": total, "failures": failures}
 
 
+def _parse_requirement_line(line):
+    """Parse a single requirement line. Returns (package_name_lower, raw_line) or None."""
+    line = line.strip()
+    if not line or line.startswith("#") or line.startswith("-"):
+        return None
+    # Extract package name (before any version specifier)
+    match = re.match(r"^([A-Za-z0-9_][A-Za-z0-9._-]*)", line)
+    if match:
+        return match.group(1).lower().replace("-", "_"), line
+    return None
+
+
+def _collect_and_merge_requirements(req_files):
+    """Collect all requirements, merge version constraints per package.
+
+    Returns:
+        merged_lines: list of merged requirement lines
+        conflicts: list of (package, [(node_name, spec), ...]) for packages with multiple constraints
+        all_lines: dict of {package_name: [(node_dir_name, raw_line), ...]}
+    """
+    # package_name -> [(node_dir_name, raw_line, version_spec)]
+    all_reqs = defaultdict(list)
+    passthrough_lines = []  # lines we can't parse (flags, comments, etc.)
+
+    for req_file in req_files:
+        node_name = req_file.parent.name
+        with open(req_file, encoding="utf-8", errors="replace") as f:
+            for raw_line in f:
+                parsed = _parse_requirement_line(raw_line)
+                if parsed is None:
+                    # Keep flags like --extra-index-url, --find-links
+                    stripped = raw_line.strip()
+                    if stripped.startswith("-"):
+                        passthrough_lines.append(stripped)
+                    continue
+                pkg_name, raw_req = parsed
+                all_reqs[pkg_name].append((node_name, raw_req))
+
+    # Merge: for each package, combine all version specs
+    merged_lines = []
+    conflicts = []
+
+    for pkg_name, entries in sorted(all_reqs.items()):
+        if len(entries) == 1:
+            # Only one node needs this package — use as-is
+            merged_lines.append(entries[0][1])
+        else:
+            # Multiple nodes need this package — merge version specs
+            specs = []
+            raw_lines = []
+            for node_name, raw_req in entries:
+                # Extract version spec part (e.g., >=1.4, <2.0)
+                match = re.match(r"^[A-Za-z0-9_][A-Za-z0-9._-]*(.*)", raw_req)
+                spec = match.group(1).strip() if match else ""
+                if spec:
+                    specs.append((node_name, spec))
+                raw_lines.append(raw_req)
+
+            if len(set(s for _, s in specs)) > 1:
+                # Different version specs — record as conflict
+                conflicts.append((pkg_name, specs))
+
+            # Build merged line: package>=spec1,>=spec2 (pip handles this)
+            display_name = entries[0][1].split(">=")[0].split("<=")[0].split("==")[0].split("!=")[0].split(">")[0].split("<")[0].strip()
+            if specs:
+                combined = ",".join(s for _, s in specs)
+                merged_lines.append(f"{display_name}{combined}")
+            else:
+                merged_lines.append(entries[0][1])
+
+    # Deduplicate passthrough lines
+    seen_flags = set()
+    unique_flags = []
+    for flag in passthrough_lines:
+        if flag not in seen_flags:
+            seen_flags.add(flag)
+            unique_flags.append(flag)
+
+    return unique_flags + merged_lines, conflicts, all_reqs
+
+
 def _install_node_pip_deps(nodes_dir):
-    """Install pip requirements for all cloned nodes, in batches of 5."""
+    """Install pip requirements for all cloned nodes.
+
+    Strategy:
+    1. Collect all requirements.txt files
+    2. Parse and merge version constraints per package
+    3. Detect and report conflicts
+    4. Write merged requirements to temp file
+    5. Single pip install --no-cache-dir call
+    """
     log = get_logger()
     nodes_dir = Path(nodes_dir)
 
@@ -108,31 +200,49 @@ def _install_node_pip_deps(nodes_dir):
         log.info("  No node requirements.txt found.")
         return
 
-    log.info(f"  Installing {len(req_files)} node dependencies in batches...")
+    # Collect and merge
+    merged_lines, conflicts, all_reqs = _collect_and_merge_requirements(req_files)
 
-    batch_size = 5
-    for i in range(0, len(req_files), batch_size):
-        batch = req_files[i : i + batch_size]
-        reqs = " ".join([f"-r {r}" for r in batch])
-        batch_num = i // batch_size + 1
-        total_batches = (len(req_files) + batch_size - 1) // batch_size
+    total_pkgs = len(all_reqs)
+    log.info(f"  Collected {total_pkgs} unique packages from {len(req_files)} nodes")
 
-        log.info(f"    batch {batch_num}/{total_batches}: {len(batch)} packages")
-        result = subprocess.run(
-            f"pip install -q {reqs}",
-            shell=True,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True,
-            timeout=600,
-        )
-        if result.returncode != 0:
-            # Log the error but continue — partial deps are better than none
-            err_lines = (result.stderr or "").strip().splitlines()[-3:]
-            for line in err_lines:
-                log.warning(f"      {line}")
+    # Report conflicts (informational — pip will resolve)
+    if conflicts:
+        log.info(f"  {len(conflicts)} packages have multiple version constraints:")
+        for pkg_name, specs in conflicts[:10]:  # show first 10
+            spec_str = ", ".join(f"{node} wants {s}" for node, s in specs)
+            log.info(f"    {pkg_name}: {spec_str}")
+        if len(conflicts) > 10:
+            log.info(f"    ... and {len(conflicts) - 10} more")
 
-    log.info(f"  {Color.OKGREEN}Node dependencies installed.{Color.ENDC}")
+    # Write merged requirements to temp file
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".txt", delete=False, prefix="merged_req_") as tmp:
+        tmp.write("\n".join(merged_lines) + "\n")
+        tmp_path = tmp.name
+
+    log.info(f"  Installing merged requirements (single pip call)...")
+
+    result = subprocess.run(
+        f"pip install --no-cache-dir -q -r {tmp_path}",
+        shell=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+        timeout=900,
+    )
+    if result.returncode != 0:
+        err_lines = (result.stderr or "").strip().splitlines()[-10:]
+        for line in err_lines:
+            log.warning(f"    {line}")
+        log.warning(f"  {Color.FAIL}pip install failed — see errors above{Color.ENDC}")
+    else:
+        log.info(f"  {Color.OKGREEN}Node dependencies installed ({total_pkgs} packages).{Color.ENDC}")
+
+    # Cleanup temp file
+    try:
+        Path(tmp_path).unlink()
+    except OSError:
+        pass
 
 
 # ── Background install (generates a standalone script) ──
@@ -182,21 +292,19 @@ for i, node in enumerate(NODES, 1):
         fail += 1
         print(f"  [{{i:2d}}/{{TOTAL}}] FAIL {{name}}: {{e}}", flush=True)
 
-# pip deps
+# pip deps — single pip call with all requirements
 req_files = []
 for p in sorted(NODES_DIR.iterdir()):
     if p.is_dir() and (p / "requirements.txt").exists():
         req_files.append(p / "requirements.txt")
 
 if req_files:
-    print(f"\\n  Installing {{len(req_files)}} node deps...")
-    for i in range(0, len(req_files), 5):
-        batch = req_files[i:i+5]
-        reqs = " ".join([f"-r {{r}}" for r in batch])
-        subprocess.run(
-            f"pip install -q {{reqs}}", shell=True,
-            stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=600,
-        )
+    reqs = " ".join([f"-r {{r}}" for r in req_files])
+    print(f"\\n  Installing deps from {{len(req_files)}} nodes (single pip call)...")
+    subprocess.run(
+        f"pip install --no-cache-dir -q {{reqs}}", shell=True,
+        stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=900,
+    )
     print("  Node deps done.")
 
 print(f"\\n  NODES_DONE: {{ok}}/{{TOTAL}} ok, {{fail}} failed")
