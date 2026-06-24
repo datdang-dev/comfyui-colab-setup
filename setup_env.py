@@ -8,8 +8,7 @@ Usage:
     python setup_env.py --hf-token=YOUR_TOKEN
 
 Or set HF_TOKEN environment variable:
-    export HF_TOKEN=YOUR_TOKEN
-    python setup_env.py
+    export HF_TOKEN=***    python setup_env.py
 """
 
 import argparse
@@ -17,6 +16,7 @@ import os
 import subprocess
 import sys
 import tarfile
+import threading
 import time
 from pathlib import Path
 
@@ -149,40 +149,54 @@ def install_deps(setup_dir):
     print_ok(f"Dependencies installed: {ok}/{len(nodes)} nodes")
 
 
-# ── Step 3: Package environment ──
+# ── Step 3: Package environment (parallel) ──
 def package_env():
     print_header("STEP 3: Package Environment")
 
     comfy_dir = WORKSPACE / "ComfyUI"
     nodes_dir = comfy_dir / "custom_nodes"
-
-    # Package custom_nodes
-    print("Packaging custom_nodes...")
-    nodes_tar = WORKSPACE / "custom_nodes.tar.gz"
-    with tarfile.open(nodes_tar, "w:gz") as tar:
-        for node_dir in nodes_dir.iterdir():
-            if node_dir.is_dir():
-                tar.add(node_dir, arcname=f"ComfyUI/custom_nodes/{node_dir.name}")
-    print(f"  custom_nodes.tar.gz: {nodes_tar.stat().st_size/(1024*1024):.0f}MB")
-
-    # Package site-packages
-    print("\nPackaging Python environment...")
-    env_tar = WORKSPACE / "comfyui-env.tar.gz"
     site_packages = Path(subprocess.check_output(
         "python -c 'import site; print(site.getsitepackages()[0])'",
         shell=True, text=True).strip())
 
-    with tarfile.open(env_tar, "w:gz") as tar:
-        tar.add(site_packages, arcname="site-packages")
-        for item in comfy_dir.iterdir():
-            if item.name == "custom_nodes":
-                continue
-            tar.add(item, arcname=f"ComfyUI/{item.name}")
+    results = {}
 
-    print(f"  comfyui-env.tar.gz: {env_tar.stat().st_size/(1024*1024):.0f}MB")
+    def pack_nodes():
+        print("[1/2] Packaging custom_nodes...")
+        nodes_tar = WORKSPACE / "custom_nodes.tar.gz"
+        with tarfile.open(nodes_tar, "w:gz") as tar:
+            dirs = [d for d in nodes_dir.iterdir() if d.is_dir()]
+            for i, node_dir in enumerate(dirs, 1):
+                print(f"  [{i}/{len(dirs)}] {node_dir.name}", flush=True)
+                tar.add(node_dir, arcname=f"ComfyUI/custom_nodes/{node_dir.name}")
+        size = nodes_tar.stat().st_size / (1024*1024)
+        print(f"  ✅ custom_nodes.tar.gz: {size:.0f}MB")
+        results["nodes"] = nodes_tar
+
+    def pack_env():
+        print("[2/2] Packaging Python environment...")
+        env_tar = WORKSPACE / "comfyui-env.tar.gz"
+        with tarfile.open(env_tar, "w:gz") as tar:
+            print(f"  Adding site-packages...", flush=True)
+            tar.add(site_packages, arcname="site-packages")
+            items = [i for i in comfy_dir.iterdir() if i.name != "custom_nodes"]
+            for i, item in enumerate(items, 1):
+                print(f"  [{i}/{len(items)}] {item.name}", flush=True)
+                tar.add(item, arcname=f"ComfyUI/{item.name}")
+        size = env_tar.stat().st_size / (1024*1024)
+        print(f"  ✅ comfyui-env.tar.gz: {size:.0f}MB")
+        results["env"] = env_tar
+
+    # Run both in parallel
+    t1 = threading.Thread(target=pack_nodes)
+    t2 = threading.Thread(target=pack_env)
+    t1.start()
+    t2.start()
+    t1.join()
+    t2.join()
+
     print_ok("Packaging complete!")
-
-    return nodes_tar, env_tar
+    return results["nodes"], results["env"]
 
 
 # ── Step 4: Upload to HF ──
