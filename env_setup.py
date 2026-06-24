@@ -17,13 +17,13 @@ else:
     print("Setup repo exists, pulling...")
     subprocess.run("git pull", shell=True, cwd=SETUP_DIR)
 
-if not Path("/opt/mamba").exists():
-    subprocess.run("curl -Ls https://micro.mamba.pm/api/micromamba/linux-64/latest | tar -xvj -C /usr/local/bin", shell=True, check=True)
+# conda is pre-installed in Colab
+print("Using pre-installed conda...")
 
 ENV_NAME = "comfyui"
 ENV_YML = SETUP_DIR / "environment.yml"
 
-subprocess.run(f"micromamba create -n {ENV_NAME} -f {ENV_YML} -y", shell=True, check=True)
+subprocess.run(f"conda create -n {ENV_NAME} -f {ENV_YML} -y", shell=True, check=True)
 
 CUSTOM_NODES_DIR = SETUP_DIR / "custom_nodes"
 if CUSTOM_NODES_DIR.exists():
@@ -36,9 +36,9 @@ if CUSTOM_NODES_DIR.exists():
     for i in range(0, len(pip_args), 5):
         batch = pip_args[i:i+5]
         reqs = " ".join([f"-r {r}" for r in batch])
-        subprocess.run(f"micromamba run -n {ENV_NAME} pip install -q {reqs}", shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE)
+        subprocess.run(f"conda run -n {ENV_NAME} pip install -q {reqs}", shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE)
 
-subprocess.run("micromamba install -n base conda-pack -y -c conda-forge", shell=True, check=True)
+subprocess.run("conda install -n base conda-pack -y -c conda-forge", shell=True, check=True)
 print(f"Environment ready!")
 
 # %% [markdown]
