@@ -218,24 +218,52 @@ def step_install_deps(setup_dir):
             tmp_path = tmp.name
 
         log.info(f"  Installing merged requirements (single pip call)...")
-        # Stream pip output live so user can see download/install progress
+        # Stream pip output live — force progress bar even when piped
+        env = os.environ.copy()
+        env["PIP_PROGRESS"] = "always"
+
         proc = subprocess.Popen(
-            f"pip install --no-cache-dir -r {tmp_path}",
+            f"pip install --no-cache-dir --progress-bar=on -r {tmp_path}",
             shell=True,
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
             text=True,
+            env=env,
         )
-        pip_errors = []
-        for line in proc.stdout:
-            line = line.rstrip()
-            if line:
-                log.info(f"    {line}")
-                pip_errors.append(line)
-        proc.wait(timeout=900)
+
+        # Heartbeat: show we're alive every 30s while pip runs
+        start_time = time.time()
+        pip_output = []
+
+        import select as _select
+        while True:
+            # Check if process finished
+            ret = proc.poll()
+            if ret is not None:
+                # Drain remaining output
+                for line in proc.stdout:
+                    line = line.rstrip()
+                    if line:
+                        log.info(f"    {line}")
+                        pip_output.append(line)
+                break
+
+            # Wait up to 30s for output
+            ready, _, _ = _select.select([proc.stdout], [], [], 30)
+            if ready:
+                line = proc.stdout.readline().rstrip()
+                if line:
+                    log.info(f"    {line}")
+                    pip_output.append(line)
+            else:
+                # Heartbeat — show elapsed time so user knows it's alive
+                elapsed = time.time() - start_time
+                log.info(f"    ... pip still running ({elapsed:.0f}s elapsed)")
+
+        proc.wait(timeout=10)
 
         if proc.returncode != 0:
-            for line in pip_errors[-10:]:
+            for line in pip_output[-10:]:
                 log.warning(f"    {line}")
             log.warning(f"  {Color.FAIL}pip install failed — see errors above{Color.ENDC}")
         else:
