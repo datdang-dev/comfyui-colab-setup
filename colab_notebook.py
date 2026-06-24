@@ -16,8 +16,8 @@ MAX_PARALLEL = 8  #@param {type:"integer"}
 
 import subprocess, os, sys
 
-SETUP_REPO = "https://github.com/datsss/comfyui-setup.git"
-SETUP_DIR = "/content/comfyui-setup"
+SETUP_REPO = "https://github.com/datdang-dev/comfyui-colab-setup.git"
+SETUP_DIR = "/content/comfyui-colab-setup"
 
 if not os.path.exists(SETUP_DIR):
     print("Cloning setup repo...")

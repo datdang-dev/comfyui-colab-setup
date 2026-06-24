@@ -7,8 +7,8 @@
 import subprocess
 from pathlib import Path
 
-SETUP_REPO = "https://github.com/datsss/comfyui-setup.git"
-SETUP_DIR = Path("/content/comfyui-setup")
+SETUP_REPO = "https://github.com/datdang-dev/comfyui-colab-setup.git"
+SETUP_DIR = Path("/content/comfyui-colab-setup")
 
 if not SETUP_DIR.exists():
     print("Cloning setup repo...")
