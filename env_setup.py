@@ -17,13 +17,26 @@ else:
     print("Setup repo exists, pulling...")
     subprocess.run("git pull", shell=True, cwd=SETUP_DIR)
 
-# conda is pre-installed in Colab
-print("Using pre-installed conda...")
+# Install miniconda (not pre-installed in Colab)
+import os
+MINICONDA_URL = "https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh"
+MINICONDA_DIR = "/opt/miniconda3"
+
+if not Path(MINICONDA_DIR).exists():
+    print("Installing miniconda...")
+    subprocess.run(f"curl -sL {MINICONDA_URL} -o /tmp/miniconda.sh", shell=True, check=True)
+    subprocess.run(f"bash /tmp/miniconda.sh -b -p {MINICONDA_DIR}", shell=True, check=True)
+    os.environ["PATH"] = f"{MINICONDA_DIR}/bin:" + os.environ["PATH"]
+    print("  mini/opt/miniconda3/bin/conda installed")
+else:
+    print("miniconda already installed")
+    os.environ["PATH"] = f"{MINICONDA_DIR}/bin:" + os.environ["PATH"]
+
 
 ENV_NAME = "comfyui"
 ENV_YML = SETUP_DIR / "environment.yml"
 
-subprocess.run(f"conda env create -f {ENV_YML} -y", shell=True, check=True)
+subprocess.run(f"/opt/miniconda3/bin/conda env create -f {ENV_YML} -y", shell=True, check=True)
 
 CUSTOM_NODES_DIR = SETUP_DIR / "custom_nodes"
 if CUSTOM_NODES_DIR.exists():
@@ -36,9 +49,9 @@ if CUSTOM_NODES_DIR.exists():
     for i in range(0, len(pip_args), 5):
         batch = pip_args[i:i+5]
         reqs = " ".join([f"-r {r}" for r in batch])
-        subprocess.run(f"conda run -n {ENV_NAME} pip install -q {reqs}", shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE)
+        subprocess.run(f"/opt/miniconda3/bin/conda run -n {ENV_NAME} pip install -q {reqs}", shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE)
 
-subprocess.run("conda install -n base conda-pack -y -c conda-forge", shell=True, check=True)
+subprocess.run("/opt/miniconda3/bin/conda install -n base conda-pack -y -c conda-forge", shell=True, check=True)
 print(f"Environment ready!")
 
 # %% [markdown]
