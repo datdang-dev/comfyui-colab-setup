@@ -33,4 +33,3 @@ huggingface_hub>=0.20.0
 hf_transfer>=0.1.4
 
 # Node extras
-latent-preview>=0.1.0

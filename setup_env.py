@@ -81,7 +81,7 @@ def clone_repos():
     comfy_dir = WORKSPACE / "ComfyUI"
     if not comfy_dir.exists():
         print("\nCloning ComfyUI...")
-        run(f"git clone --depth=1 {COMFYUI_REPO} {WORKSPACE}")
+        run(f"git clone --depth=1 {COMFYUI_REPO} {WORKSPACE}/ComfyUI")
     else:
         print("\nComfyUI exists, pulling...")
         run("git pull", cwd=comfy_dir)
