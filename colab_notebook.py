@@ -1,45 +1,59 @@
 # %% [markdown]
-# # ComfyUI Colab Setup
-# One-click setup for ComfyUI + custom nodes + model download.
+# # ComfyUI Colab
+# Downloads pre-built environment from HuggingFace (~2min).
 
 # %% [markdown]
 # ## Cell 1 — Setup
-# Clone ComfyUI, install deps, select & download models.
 
 # %%
 #@title ⚙️ Parameters
-USE_PREBUILT = True  #@param {type:"boolean"}
+HF_TOKEN = ""  #@param {type:"string"}
 REPO_ID = "datsss/my-dataset"  #@param {type:"string"}
 REPO_TYPE = "dataset"  #@param ["dataset", "model"]
 MAX_PARALLEL = 8  #@param {type:"integer"}
 
-import subprocess, os, sys
+import subprocess, os
 from pathlib import Path
 
+# ── Load pre-built environment ──
+ENV_REPO = "datsss/comfyui-env"
+WORKSPACE = Path("/content")
+
+print("Downloading pre-built environment from HuggingFace...")
+subprocess.run("pip install -q huggingface_hub hf_transfer", shell=True)
+
+from huggingface_hub import hf_hub_download
+
+# Download custom_nodes
+print("  Downloading custom_nodes.tar.gz...")
+nodes_archive = hf_hub_download(repo_id=ENV_REPO, filename="custom_nodes.tar.gz",
+                                repo_type="dataset", token=HF_TOKEN or None)
+print("  Extracting custom_nodes...")
+subprocess.run(f"tar -xzf {nodes_archive} -C {WORKSPACE}", shell=True, check=True)
+
+# Download env
+print("  Downloading comfyui-env.tar.gz...")
+env_archive = hf_hub_download(repo_id=ENV_REPO, filename="comfyui-env.tar.gz",
+                              repo_type="dataset", token=HF_TOKEN or None)
+print("  Extracting environment...")
+subprocess.run(f"tar -xzf {env_archive} -C {WORKSPACE}", shell=True, check=True)
+
+print("✅ Environment ready!")
+
+# ── Run install script (for models) ──
 SETUP_REPO = "https://github.com/datdang-dev/comfyui-colab-setup.git"
-SETUP_DIR = Path("/content/comfyui-colab-setup")
+SETUP_DIR = WORKSPACE / "comfyui-colab-setup"
 
-# ── Clone setup repo ──
 if not SETUP_DIR.exists():
-    print("Cloning setup repo...")
     subprocess.run(f"git clone --depth=1 {SETUP_REPO} {SETUP_DIR}", shell=True, check=True)
-else:
-    subprocess.run("git pull", shell=True, cwd=SETUP_DIR)
 
-# ── Clone ComfyUI ──
-if not Path("/content/ComfyUI").exists():
-    print("Cloning ComfyUI...")
-    subprocess.run("git clone --depth=1 https://github.com/comfyanonymous/ComfyUI.git /content/ComfyUI", shell=True, check=True)
-
-# ── Run install ──
-cmd = f"python {SETUP_DIR}/install.py --repo-id={REPO_ID} --repo-type={REPO_TYPE} --max-parallel={MAX_PARALLEL}"
-if USE_PREBUILT:
-    cmd += " --use-prebuilt"
+cmd = f"python {SETUP_DIR}/install.py --repo-id={REPO_ID} --repo-type={REPO_TYPE} --max-parallel={MAX_PARALLEL} --skip-nodes"
+if HF_TOKEN:
+    cmd += f" --hf-token={HF_TOKEN}"
 subprocess.run(cmd, shell=True)
 
 # %% [markdown]
 # ## Cell 2 — Launch
-# Start ComfyUI server + Cloudflare tunnel.
 
 # %%
 #@title 🚀 Launch
