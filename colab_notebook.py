@@ -7,11 +7,11 @@
 # ```
 
 # %%
-#@title 🔄 Keep Alive
-import time, os
-from IPython.display import display, HTML
+# @title Keep Alive
+import time
+from IPython.display import HTML, display
 
-display(HTML("<h3>✅ Session active — run setup in terminal</h3>"))
+display(HTML("<h3>Session active — run setup in terminal</h3>"))
 
 while True:
     time.sleep(60)

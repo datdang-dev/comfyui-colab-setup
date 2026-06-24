@@ -1,57 +1,81 @@
-"""ComfyUI core installation — clone repo, install deps, start background node install."""
+"""ComfyUI core installation — clone repo, install deps."""
 
-import os
 import subprocess
-import sys
 from pathlib import Path
 
 from . import config
-from .ui import Color, run_cmd
+from .ui import Color, get_logger, print_header, run_cmd
 
 
 def clone_comfyui(workspace=None):
-    """Clone or update ComfyUI core repository."""
+    """Clone or update ComfyUI core repository.
+
+    Returns the comfy_dir Path. Uses config.yaml for the repo URL.
+    """
+    log = get_logger()
     ws = Path(workspace or config.WORKSPACE)
     comfy_dir = ws / "ComfyUI"
+    comfyui_repo = config.get_comfyui_repo()
 
     if not comfy_dir.exists():
-        print(f"\n  {Color.OKBLUE}📥 Cloning ComfyUI...{Color.ENDC}")
-        run_cmd(f"git clone --depth=1 {config.COMFYUI_REPO}", cwd=ws)
+        log.info(f"Cloning ComfyUI from {comfyui_repo}...")
+        run_cmd(f"git clone --depth=1 {comfyui_repo}", cwd=str(ws))
+        # Install core requirements
+        req = comfy_dir / "requirements.txt"
+        if req.exists():
+            log.info("Installing ComfyUI core dependencies...")
+            run_cmd(f"pip install -q -r {req}")
+        (comfy_dir / "custom_nodes").mkdir(exist_ok=True)
+        log.info(f"{Color.OKGREEN}ComfyUI core ready{Color.ENDC}")
     else:
-        print(f"\n  {Color.OKBLUE}🔄 Updating ComfyUI...{Color.ENDC}")
-        run_cmd("git pull", cwd=comfy_dir)
-
-    # Install core requirements
-    req = comfy_dir / "requirements.txt"
-    if req.exists():
-        print(f"  {Color.OKBLUE}📦 Installing core deps...{Color.ENDC}")
-        run_cmd(f"pip install -q -r {req}")
-
-    nodes_dir = comfy_dir / "custom_nodes"
-    nodes_dir.mkdir(exist_ok=True)
-    print(f"  {Color.OKGREEN}✅ ComfyUI core ready{Color.ENDC}")
+        log.info(f"{Color.OKBLUE}ComfyUI already cloned, pulling updates...{Color.ENDC}")
+        run_cmd("git pull", cwd=str(comfy_dir), quiet=True)
 
     return comfy_dir
 
 
-def start_background_nodes(comfy_dir):
-    """Start custom node installation in background subprocess. Returns PID."""
-    from . import nodes
+def load_prebuilt(workspace=None, auth_token=None, env_repo=None):
+    """Download and extract pre-built environment from HuggingFace.
 
-    script_content = nodes.generate_install_script(comfy_dir)
-    script_path = "/tmp/_install_nodes.py"
+    Expects two archives on the HF dataset:
+      - custom_nodes.tar.gz  → extracts into <workspace>/ComfyUI/custom_nodes/
+      - env.tar.gz           → extracts into /usr/local/lib/<site-packages>/
 
-    with open(script_path, "w") as f:
-        f.write(script_content)
+    Returns comfy_dir.
+    """
+    log = get_logger()
+    from huggingface_hub import hf_hub_download
 
-    print(f"  {Color.OKBLUE}🧩 Starting node install in background...{Color.ENDC}")
-    print(f"     (You can select models while nodes install)\n")
+    ws = Path(workspace or config.WORKSPACE)
+    env_repo = env_repo or config.DEFAULT_ENV_REPO
 
-    proc = subprocess.Popen(
-        [sys.executable, script_path],
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT,
-        text=True,
+    log.info(f"Loading pre-built environment from {env_repo}...")
+
+    # Download + extract custom_nodes
+    log.info("  Downloading custom_nodes.tar.gz...")
+    nodes_archive = hf_hub_download(
+        repo_id=env_repo,
+        filename="custom_nodes.tar.gz",
+        repo_type="dataset",
+        token=auth_token,
     )
+    log.info("  Extracting custom_nodes...")
+    subprocess.run(f"tar -xzf {nodes_archive} -C {ws}", shell=True, check=True)
+    log.info(f"  {Color.OKGREEN}Custom nodes ready{Color.ENDC}")
 
-    return proc.pid
+    # Download + extract Python env
+    log.info("  Downloading env.tar.gz...")
+    env_archive = hf_hub_download(
+        repo_id=env_repo,
+        filename="env.tar.gz",
+        repo_type="dataset",
+        token=auth_token,
+    )
+    site_pkg = config.get_site_packages()
+    site_pkg_parent = site_pkg.parent  # e.g. /usr/local/lib
+    log.info(f"  Extracting Python environment into {site_pkg_parent}...")
+    subprocess.run(f"tar -xzf {env_archive} -C {site_pkg_parent}", shell=True, check=True)
+    log.info(f"  {Color.OKGREEN}Python environment ready{Color.ENDC}")
+
+    return ws / "ComfyUI"
+

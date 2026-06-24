@@ -1,4 +1,4 @@
-"""Model downloading with hf_transfer (preferred) or aria2c (fallback)."""
+"""Model downloading with hf_transfer (preferred) and progress display."""
 
 import concurrent.futures
 import json
@@ -6,11 +6,11 @@ import os
 import time
 
 from . import config
-from .ui import Color, run_cmd
+from .ui import Color, get_logger, run_cmd, timer
 
 
 def download_one(item, auth_token):
-    """Download single file via hf_transfer."""
+    """Download a single file via hf_hub_download."""
     from huggingface_hub import hf_hub_download
 
     url = item["url"]
@@ -32,7 +32,8 @@ def download_one(item, auth_token):
 
 
 def download_all(download_list, auth_token, max_parallel=None):
-    """Download all files in download_list with progress display."""
+    """Download all files in download_list with progress display and timing."""
+    log = get_logger()
     parallel = max_parallel or config.MAX_DOWNLOAD_PARALLEL
 
     # Pre-check: skip existing
@@ -47,70 +48,74 @@ def download_all(download_list, auth_token, max_parallel=None):
             to_download.append(item)
 
     if skipped:
-        print(f"  ⏭️  Skipping {skipped} existing files")
+        log.info(f"  Skipping {skipped} existing files")
 
     if not to_download:
-        print(f"  {Color.OKGREEN}✅ All {len(download_list)} files already downloaded!{Color.ENDC}")
+        log.info(f"  {Color.OKGREEN}All {len(download_list)} files already downloaded.{Color.ENDC}")
         return {"ok": len(download_list), "fail": 0, "skipped": skipped}
 
-    print(f"  🚀 Downloading {len(to_download)} files ({parallel} parallel)...\n")
+    log.info(f"  Downloading {len(to_download)} files ({parallel} parallel)...")
 
-    # Install hf_transfer
+    # Enable hf_transfer for faster downloads
     run_cmd("pip install hf_transfer -q", quiet=True)
     os.environ["HF_HUB_ENABLE_HF_TRANSFER"] = "1"
 
     ok = 0
     fail = 0
     total = len(to_download)
-    start_time = time.time()
 
     def dl_with_log(item):
         nonlocal ok, fail
         fname = item["filename"]
         try:
-            download_one(item, auth_token)
+            with timer() as t:
+                download_one(item, auth_token)
             ok += 1
+            # Estimate throughput: count successful per wall time
             elapsed = time.time() - start_time
             speed = ok / elapsed if elapsed > 0 else 0
             eta = (total - ok - fail) / speed if speed > 0 else 0
-            print(
-                f"  [{ok+fail:3d}/{total}] {Color.OKGREEN}✓{Color.ENDC} {fname}  "
-                f"({speed:.1f}/s, ETA {int(eta)}s)"
+            log.info(
+                f"  [{ok + fail:3d}/{total}] {Color.OKGREEN}✓{Color.ENDC} {fname}  "
+                f"({t.elapsed:.1f}s, {speed:.1f}/s, ETA {int(eta)}s)"
             )
         except Exception as e:
             fail += 1
-            print(f"  [{ok+fail:3d}/{total}] {Color.FAIL}✗{Color.ENDC} {fname}: {e}")
+            log.error(f"  [{ok + fail:3d}/{total}] {Color.FAIL}✗{Color.ENDC} {fname}: {e}")
 
-    with concurrent.futures.ThreadPoolExecutor(max_workers=parallel) as pool:
-        list(pool.map(dl_with_log, to_download))
+    with timer() as total_timer:
+        start_time = time.time()
+        with concurrent.futures.ThreadPoolExecutor(max_workers=parallel) as pool:
+            list(pool.map(dl_with_log, to_download))
 
-    elapsed = time.time() - start_time
-    print(f"\n  {'─'*50}")
+    log.info("")
     if fail == 0:
-        print(
-            f"  {Color.OKGREEN}✅ Done: {ok} files in {elapsed:.1f}s ({elapsed/60:.1f}min){Color.ENDC}"
+        log.info(
+            f"  {Color.OKGREEN}Done: {ok} files in {total_timer.elapsed:.0f}s "
+            f"({total_timer.elapsed / 60:.1f}min){Color.ENDC}"
         )
     else:
-        print(
-            f"  {Color.WARNING}⚠️  Done: {ok} ok, {fail} failed in {elapsed:.1f}s{Color.ENDC}"
+        log.info(
+            f"  {Color.WARNING}Done: {ok} ok, {fail} failed in {total_timer.elapsed:.0f}s{Color.ENDC}"
         )
 
     return {"ok": ok, "fail": fail, "skipped": skipped}
 
 
 def load_and_download(download_list_file=None, auth_token=None, max_parallel=None):
-    """Load download list from file and download."""
+    """Load download list from file and execute download."""
+    log = get_logger()
     dl_file = download_list_file or config.DOWNLOAD_LIST_FILE
 
     if not os.path.exists(dl_file):
-        print(f"  {Color.WARNING}⚠️  No download list found. Run selection first.{Color.ENDC}")
+        log.warning(f"No download list found at {dl_file}. Run selection first.")
         return {"ok": 0, "fail": 0, "skipped": 0}
 
     with open(dl_file) as f:
         download_list = json.load(f)
 
     if not download_list:
-        print(f"  ℹ️  No files to download.")
+        log.info("  No files to download.")
         return {"ok": 0, "fail": 0, "skipped": 0}
 
     return download_all(download_list, auth_token, max_parallel)
