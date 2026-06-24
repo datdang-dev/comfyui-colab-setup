@@ -38,8 +38,8 @@ def load_prebuilt(workspace=None, auth_token=None, env_repo=None):
     """Download and extract pre-built environment from HuggingFace.
 
     Expects two archives on the HF dataset:
-      - custom_nodes.tar.gz  → extracts into <workspace>/ComfyUI/custom_nodes/
-      - env.tar.gz           → extracts into /usr/local/lib/<site-packages>/
+      - comfyui-env.tar.gz  → contains site-packages/ + ComfyUI/ (core)
+      - custom_nodes.tar.gz → contains custom_nodes/
 
     Returns comfy_dir.
     """
@@ -48,10 +48,34 @@ def load_prebuilt(workspace=None, auth_token=None, env_repo=None):
 
     ws = Path(workspace or config.WORKSPACE)
     env_repo = env_repo or config.DEFAULT_ENV_REPO
+    comfy_dir = ws / "ComfyUI"
 
     log.info(f"Loading pre-built environment from {env_repo}...")
 
-    # Download + extract custom_nodes
+    # Download + extract comfyui-env.tar.gz (site-packages + ComfyUI core)
+    log.info("  Downloading comfyui-env.tar.gz...")
+    env_archive = hf_hub_download(
+        repo_id=env_repo,
+        filename="comfyui-env.tar.gz",
+        repo_type="dataset",
+        token=auth_token,
+    )
+    log.info(f"  Extracting comfyui-env.tar.gz into {ws}...")
+    subprocess.run(f"tar -xzf {env_archive} -C {ws}", shell=True, check=True)
+
+    # Restore site-packages into system Python
+    site_pkg = config.get_site_packages()
+    sp_dir = ws / "site-packages"
+    if sp_dir.exists():
+        log.info(f"  Restoring site-packages to {site_pkg}...")
+        subprocess.run(
+            f"cp -rn {sp_dir}/* {site_pkg}/ 2>/dev/null; "
+            f"cp -rn {sp_dir}/.[!.]* {site_pkg}/ 2>/dev/null",
+            shell=True,
+        )
+    log.info(f"  {Color.OKGREEN}Python environment ready{Color.ENDC}")
+
+    # Download + extract custom_nodes.tar.gz
     log.info("  Downloading custom_nodes.tar.gz...")
     nodes_archive = hf_hub_download(
         repo_id=env_repo,
@@ -59,23 +83,9 @@ def load_prebuilt(workspace=None, auth_token=None, env_repo=None):
         repo_type="dataset",
         token=auth_token,
     )
-    log.info("  Extracting custom_nodes...")
-    subprocess.run(f"tar -xzf {nodes_archive} -C {ws}", shell=True, check=True)
+    log.info(f"  Extracting custom_nodes into {comfy_dir}...")
+    subprocess.run(f"tar -xzf {nodes_archive} -C {comfy_dir}", shell=True, check=True)
     log.info(f"  {Color.OKGREEN}Custom nodes ready{Color.ENDC}")
 
-    # Download + extract Python env
-    log.info("  Downloading env.tar.gz...")
-    env_archive = hf_hub_download(
-        repo_id=env_repo,
-        filename="env.tar.gz",
-        repo_type="dataset",
-        token=auth_token,
-    )
-    site_pkg = config.get_site_packages()
-    site_pkg_parent = site_pkg.parent  # e.g. /usr/local/lib
-    log.info(f"  Extracting Python environment into {site_pkg_parent}...")
-    subprocess.run(f"tar -xzf {env_archive} -C {site_pkg_parent}", shell=True, check=True)
-    log.info(f"  {Color.OKGREEN}Python environment ready{Color.ENDC}")
-
-    return ws / "ComfyUI"
+    return comfy_dir
 
