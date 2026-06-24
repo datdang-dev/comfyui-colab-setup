@@ -218,16 +218,24 @@ def step_install_deps(setup_dir):
             tmp_path = tmp.name
 
         log.info(f"  Installing merged requirements (single pip call)...")
-        result = subprocess.run(
-            f"pip install --no-cache-dir -q -r {tmp_path}",
+        # Stream pip output live so user can see download/install progress
+        proc = subprocess.Popen(
+            f"pip install --no-cache-dir -r {tmp_path}",
             shell=True,
             stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
             text=True,
-            timeout=900,
         )
-        if result.returncode != 0:
-            for line in (result.stderr or "").strip().splitlines()[-10:]:
+        pip_errors = []
+        for line in proc.stdout:
+            line = line.rstrip()
+            if line:
+                log.info(f"    {line}")
+                pip_errors.append(line)
+        proc.wait(timeout=900)
+
+        if proc.returncode != 0:
+            for line in pip_errors[-10:]:
                 log.warning(f"    {line}")
             log.warning(f"  {Color.FAIL}pip install failed — see errors above{Color.ENDC}")
         else:
