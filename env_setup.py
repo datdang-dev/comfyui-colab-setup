@@ -23,7 +23,7 @@ print("Using pre-installed conda...")
 ENV_NAME = "comfyui"
 ENV_YML = SETUP_DIR / "environment.yml"
 
-subprocess.run(f"conda create -n {ENV_NAME} -f {ENV_YML} -y", shell=True, check=True)
+subprocess.run(f"conda env create -f {ENV_YML} -y", shell=True, check=True)
 
 CUSTOM_NODES_DIR = SETUP_DIR / "custom_nodes"
 if CUSTOM_NODES_DIR.exists():
