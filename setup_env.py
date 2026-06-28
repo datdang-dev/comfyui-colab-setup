@@ -180,8 +180,12 @@ def step_clone_repos(comfy_version=""):
     else:
         if comfy_version:
             log.info(f"ComfyUI exists, checking out '{comfy_version}'...")
-            run_cmd("git fetch --all", cwd=str(comfy_dir), quiet=True)
-            run_cmd(f"git checkout {comfy_version}", cwd=str(comfy_dir))
+            run_cmd("git fetch --all --tags", cwd=str(comfy_dir), quiet=True)
+            r = subprocess.run(f"git checkout {comfy_version}", shell=True, cwd=str(comfy_dir), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            if r.returncode != 0:
+                log.info(f"Checkout of '{comfy_version}' failed. Trying explicit tag fetch...")
+                run_cmd(f"git fetch origin tag {comfy_version} --no-tags", cwd=str(comfy_dir), quiet=True)
+                run_cmd(f"git checkout {comfy_version}", cwd=str(comfy_dir))
         else:
             log.info("ComfyUI exists, pulling updates...")
             run_cmd("git pull", cwd=str(comfy_dir), quiet=True)
