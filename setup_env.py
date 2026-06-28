@@ -474,7 +474,14 @@ def step_upload_hf(nodes_tar, env_tar, hf_token, models_tar=None):
     from huggingface_hub import HfApi
 
     api = HfApi()
-    api.create_repo(repo_id=ENV_REPO, repo_type="dataset", token=hf_token, exist_ok=True)
+    try:
+        api.create_repo(repo_id=ENV_REPO, repo_type="dataset", token=hf_token, exist_ok=True)
+    except Exception as e:
+        if "401" in str(e) or "403" in str(e) or "Unauthorized" in str(e):
+            log.error(f"{Color.FAIL}Hugging Face repository creation/check failed (401/403 Unauthorized). "
+                      f"Please ensure your token is correct and has WRITE permissions. "
+                      f"Read-only tokens cannot upload files.{Color.ENDC}")
+        raise e
 
     meta_json = WORKSPACE / "metadata.json"
     dl_yaml = WORKSPACE / "download_list.yaml"
@@ -493,13 +500,20 @@ def step_upload_hf(nodes_tar, env_tar, hf_token, models_tar=None):
         size_mb = Path(local_path).stat().st_size / (1024 * 1024)
         log.info(f"  Uploading {repo_path} ({size_mb:.0f}MB)...")
         with timer() as t:
-            api.upload_file(
-                path_or_fileobj=local_path,
-                path_in_repo=repo_path,
-                repo_id=ENV_REPO,
-                repo_type="dataset",
-                token=hf_token,
-            )
+            try:
+                api.upload_file(
+                    path_or_fileobj=local_path,
+                    path_in_repo=repo_path,
+                    repo_id=ENV_REPO,
+                    repo_type="dataset",
+                    token=hf_token,
+                )
+            except Exception as e:
+                if "401" in str(e) or "403" in str(e) or "Unauthorized" in str(e):
+                    log.error(f"{Color.FAIL}Upload of {repo_path} failed (401/403 Unauthorized). "
+                              f"Your Hugging Face token is likely set to READ-only. "
+                              f"Please generate a WRITE token on Hugging Face and try again.{Color.ENDC}")
+                raise e
         log.info(f"  {Color.OKGREEN}{repo_path} uploaded ({size_mb:.0f}MB in {t.elapsed:.0f}s){Color.ENDC}")
 
     with ThreadPoolExecutor(max_workers=3) as pool:
