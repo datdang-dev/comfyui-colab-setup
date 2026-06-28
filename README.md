@@ -86,6 +86,11 @@ Full flow:
 Queries your Hugging Face dataset to dynamically build/update `download_list.yaml` grouped by category headers:
 *   `python setup_env.py fetch --repo-id=datsss/my-dataset`
 
+## Resume Upload CLI (`setup_env.py upload`)
+
+If a build fails at the upload step (e.g. due to a missing or read-only token) after already packaging or downloading models, you can resume uploading the pre-built files (`custom_nodes.tar.gz`, `comfyui-env.tar.gz`, and optionally `comfyui-models.tar.gz`) from `/content` directly:
+*   `python setup_env.py upload --hf-token=YOUR_WRITE_TOKEN`
+
 ## Configuration
 
 Edit `config.yaml` to add/remove/pin custom nodes:

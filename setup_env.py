@@ -731,6 +731,10 @@ def main():
     parser_fetch.add_argument("--repo-id", default="datsss/my-dataset", help="HF source dataset repository ID")
     parser_fetch.add_argument("--output", default="download_list.yaml", help="Path to output YAML file")
 
+    # Command: upload (uploads already compiled packages)
+    parser_upload = subparsers.add_parser("upload", help="Upload already built packages to HuggingFace")
+    parser_upload.add_argument("--hf-token", default=os.environ.get("HF_TOKEN", ""))
+
     args = parser.parse_args()
 
     if args.command == "fetch":
@@ -739,6 +743,27 @@ def main():
 
     if args.command == "install":
         run_install(args)
+        return
+
+    if args.command == "upload":
+        hf_token = args.hf_token.strip() or None
+        if not hf_token:
+            import getpass
+            hf_token = getpass.getpass("HF Token: ")
+
+        log = setup_logging()
+        method, suffix = detect_compression()
+        nodes_tar = WORKSPACE / f"custom_nodes{suffix}"
+        env_tar = WORKSPACE / f"comfyui-env{suffix}"
+        models_tar = WORKSPACE / f"comfyui-models{suffix}"
+
+        if not nodes_tar.exists() or not env_tar.exists():
+            log.error(f"Could not find prebuilt files: '{nodes_tar}' or '{env_tar}'. "
+                      f"Please run 'build' first to package them.")
+            sys.exit(1)
+
+        models_tar_path = str(models_tar) if models_tar.exists() else None
+        step_upload_hf(nodes_tar, env_tar, hf_token, models_tar_path)
         return
 
     if args.command == "build":
