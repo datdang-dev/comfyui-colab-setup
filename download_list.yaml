@@ -3,19 +3,19 @@ checkpoints:
     filename: checkpoint_one_obsession.safetensors
     url: https://huggingface.co/datasets/datsss/my-dataset/resolve/main/checkpoint/checkpoint_one_obsession.safetensors
 
-clip_vision:
-  - dest_dir: /content/ComfyUI/models/clip_vision
-    filename: model.safetensors
-    url: https://huggingface.co/datasets/datsss/my-dataset/resolve/main/clip_vision/model.safetensors
+# clip_vision:
+#   - dest_dir: /content/ComfyUI/models/clip_vision
+#     filename: model.safetensors
+#     url: https://huggingface.co/datasets/datsss/my-dataset/resolve/main/clip_vision/model.safetensors
 
 diffusion_models:
-  - dest_dir: /content/ComfyUI/models/diffusion_models
-    filename: anima-preview3-base.safetensors
-    url: https://huggingface.co/datasets/datsss/my-dataset/resolve/main/diffusion_models/anima-preview3-base.safetensors
+  # - dest_dir: /content/ComfyUI/models/diffusion_models
+  #   filename: anima-preview3-base.safetensors
+  #   url: https://huggingface.co/datasets/datsss/my-dataset/resolve/main/diffusion_models/anima-preview3-base.safetensors
 
-  - dest_dir: /content/ComfyUI/models/diffusion_models
-    filename: checkpoint_miaomiao_harem.safetensors
-    url: https://huggingface.co/datasets/datsss/my-dataset/resolve/main/diffusion_models/checkpoint_miaomiao_harem.safetensors
+  # - dest_dir: /content/ComfyUI/models/diffusion_models
+  #   filename: checkpoint_miaomiao_harem.safetensors
+  #   url: https://huggingface.co/datasets/datsss/my-dataset/resolve/main/diffusion_models/checkpoint_miaomiao_harem.safetensors
 
 embeddings:
   - dest_dir: /content/ComfyUI/models/embeddings
@@ -50,10 +50,10 @@ embeddings:
     filename: lazypos.safetensors
     url: https://huggingface.co/datasets/datsss/my-dataset/resolve/main/embedding/lazypos.safetensors
 
-ipadapter:
-  - dest_dir: /content/ComfyUI/models/ipadapter
-    filename: ip-adapter-plus_sdxl_vit-h.safetensors
-    url: https://huggingface.co/datasets/datsss/my-dataset/resolve/main/ipadapters/ip-adapter-plus_sdxl_vit-h.safetensors
+# ipadapter:
+#   - dest_dir: /content/ComfyUI/models/ipadapter
+#     filename: ip-adapter-plus_sdxl_vit-h.safetensors
+#     url: https://huggingface.co/datasets/datsss/my-dataset/resolve/main/ipadapters/ip-adapter-plus_sdxl_vit-h.safetensors
 
 loras:
   - dest_dir: /content/ComfyUI/models/loras
@@ -132,22 +132,22 @@ loras:
     filename: stray-pubic-hair-illustriousxl-lora-nochekaiser.safetensors
     url: https://huggingface.co/datasets/datsss/my-dataset/resolve/main/lora/stray-pubic-hair-illustriousxl-lora-nochekaiser.safetensors
 
-text_encoders:
-  - dest_dir: /content/ComfyUI/models/text_encoders
-    filename: qwen_3_06b_base.safetensors
-    url: https://huggingface.co/datasets/datsss/my-dataset/resolve/main/text_encoders/qwen_3_06b_base.safetensors
+# text_encoders:
+#   - dest_dir: /content/ComfyUI/models/text_encoders
+#     filename: qwen_3_06b_base.safetensors
+#     url: https://huggingface.co/datasets/datsss/my-dataset/resolve/main/text_encoders/qwen_3_06b_base.safetensors
 
-ultralytics_bbox:
-  - dest_dir: /content/ComfyUI/models/ultralytics/bbox
-    filename: hand_yolov8n.pt
-    url: https://huggingface.co/datasets/datsss/my-dataset/resolve/main/ultralytics/bbox/hand_yolov8n.pt
+# ultralytics_bbox:
+#   - dest_dir: /content/ComfyUI/models/ultralytics/bbox
+#     filename: hand_yolov8n.pt
+#     url: https://huggingface.co/datasets/datsss/my-dataset/resolve/main/ultralytics/bbox/hand_yolov8n.pt
 
 upscale_models:
   - dest_dir: /content/ComfyUI/models/upscale_models
     filename: 4x-AnimeSharp.pth
     url: https://huggingface.co/datasets/datsss/my-dataset/resolve/main/upscalers/4x-AnimeSharp.pth
 
-vae:
-  - dest_dir: /content/ComfyUI/models/vae
-    filename: qwen_image_vae.safetensors
-    url: https://huggingface.co/datasets/datsss/my-dataset/resolve/main/vae/qwen_image_vae.safetensors
+# vae:
+#   - dest_dir: /content/ComfyUI/models/vae
+#     filename: qwen_image_vae.safetensors
+#     url: https://huggingface.co/datasets/datsss/my-dataset/resolve/main/vae/qwen_image_vae.safetensors
