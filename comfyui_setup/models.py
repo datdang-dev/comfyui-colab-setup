@@ -108,14 +108,38 @@ def load_and_download(download_list_file=None, auth_token=None, max_parallel=Non
     dl_file = download_list_file or config.DOWNLOAD_LIST_FILE
 
     if not os.path.exists(dl_file):
-        log.warning(f"No download list found at {dl_file}. Run selection first.")
+        # Generate default list from config.yaml if it doesn't exist
+        default_models = config.get_default_models()
+        if default_models:
+            log.info(f"Writing default models from config.yaml to {dl_file}...")
+            try:
+                with open(dl_file, "w") as f:
+                    json.dump(default_models, f, indent=2)
+            except Exception as e:
+                log.warning(f"Failed to write default download list: {e}")
+        else:
+            log.warning(f"No download list found at {dl_file} and no default models in config.yaml.")
+            return {"ok": 0, "fail": 0, "skipped": 0}
+
+    import yaml
+    try:
+        with open(dl_file, "r", encoding="utf-8") as f:
+            raw_data = yaml.safe_load(f)
+    except Exception as e:
+        log.error(f"Failed to parse download_list.yaml: {e}")
         return {"ok": 0, "fail": 0, "skipped": 0}
 
-    with open(dl_file) as f:
-        download_list = json.load(f)
+    # Flatten grouped list if structured as a dictionary
+    download_list = []
+    if isinstance(raw_data, list):
+        download_list = raw_data
+    elif isinstance(raw_data, dict):
+        for val in raw_data.values():
+            if isinstance(val, list):
+                download_list.extend(val)
 
     if not download_list:
-        log.info("  No files to download.")
+        log.info("  No active models to download in download_list.yaml.")
         return {"ok": 0, "fail": 0, "skipped": 0}
 
     return download_all(download_list, auth_token, max_parallel)

@@ -4,7 +4,7 @@
 
 comfyui:
   repo: "https://github.com/comfyanonymous/ComfyUI.git"
-  branch: "master"
+  version: "latest_release"
 
 nodes:
   # Core

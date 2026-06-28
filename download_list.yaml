@@ -1,0 +1,153 @@
+checkpoints:
+  - dest_dir: /content/ComfyUI/models/checkpoints
+    filename: checkpoint_one_obsession.safetensors
+    url: https://huggingface.co/datasets/datsss/my-dataset/resolve/main/checkpoint/checkpoint_one_obsession.safetensors
+
+clip_vision:
+  - dest_dir: /content/ComfyUI/models/clip_vision
+    filename: model.safetensors
+    url: https://huggingface.co/datasets/datsss/my-dataset/resolve/main/clip_vision/model.safetensors
+
+diffusion_models:
+  - dest_dir: /content/ComfyUI/models/diffusion_models
+    filename: anima-preview3-base.safetensors
+    url: https://huggingface.co/datasets/datsss/my-dataset/resolve/main/diffusion_models/anima-preview3-base.safetensors
+
+  - dest_dir: /content/ComfyUI/models/diffusion_models
+    filename: checkpoint_miaomiao_harem.safetensors
+    url: https://huggingface.co/datasets/datsss/my-dataset/resolve/main/diffusion_models/checkpoint_miaomiao_harem.safetensors
+
+embeddings:
+  - dest_dir: /content/ComfyUI/models/embeddings
+    filename: SmoothNegative_Hands-neg.safetensors
+    url: https://huggingface.co/datasets/datsss/my-dataset/resolve/main/embedding/SmoothNegative_Hands-neg.safetensors
+
+  - dest_dir: /content/ComfyUI/models/embeddings
+    filename: SmoothNoob_Negative-neg.safetensors
+    url: https://huggingface.co/datasets/datsss/my-dataset/resolve/main/embedding/SmoothNoob_Negative-neg.safetensors
+
+  - dest_dir: /content/ComfyUI/models/embeddings
+    filename: SmoothNoob_Quality.safetensors
+    url: https://huggingface.co/datasets/datsss/my-dataset/resolve/main/embedding/SmoothNoob_Quality.safetensors
+
+  - dest_dir: /content/ComfyUI/models/embeddings
+    filename: Smooth_Negative-neg.safetensors
+    url: https://huggingface.co/datasets/datsss/my-dataset/resolve/main/embedding/Smooth_Negative-neg.safetensors
+
+  - dest_dir: /content/ComfyUI/models/embeddings
+    filename: Smooth_Quality.safetensors
+    url: https://huggingface.co/datasets/datsss/my-dataset/resolve/main/embedding/Smooth_Quality.safetensors
+
+  - dest_dir: /content/ComfyUI/models/embeddings
+    filename: lazyhand.safetensors
+    url: https://huggingface.co/datasets/datsss/my-dataset/resolve/main/embedding/lazyhand.safetensors
+
+  - dest_dir: /content/ComfyUI/models/embeddings
+    filename: lazyneg.safetensors
+    url: https://huggingface.co/datasets/datsss/my-dataset/resolve/main/embedding/lazyneg.safetensors
+
+  - dest_dir: /content/ComfyUI/models/embeddings
+    filename: lazypos.safetensors
+    url: https://huggingface.co/datasets/datsss/my-dataset/resolve/main/embedding/lazypos.safetensors
+
+ipadapter:
+  - dest_dir: /content/ComfyUI/models/ipadapter
+    filename: ip-adapter-plus_sdxl_vit-h.safetensors
+    url: https://huggingface.co/datasets/datsss/my-dataset/resolve/main/ipadapters/ip-adapter-plus_sdxl_vit-h.safetensors
+
+loras:
+  - dest_dir: /content/ComfyUI/models/loras
+    filename: Asuka_Anders(IL)-000004.safetensors
+    url: https://huggingface.co/datasets/datsss/my-dataset/resolve/main/lora/Asuka_Anders(IL)-000004.safetensors
+
+  - dest_dir: /content/ComfyUI/models/loras
+    filename: BD2artstyle_ilxl.safetensors
+    url: https://huggingface.co/datasets/datsss/my-dataset/resolve/main/lora/BD2artstyle_ilxl.safetensors
+
+  - dest_dir: /content/ComfyUI/models/loras
+    filename: Bache_XL_illustrious-noob_v1.safetensors
+    url: https://huggingface.co/datasets/datsss/my-dataset/resolve/main/lora/Bache_XL_illustrious-noob_v1.safetensors
+
+  - dest_dir: /content/ComfyUI/models/loras
+    filename: DeborahUTW_Illustrious.safetensors
+    url: https://huggingface.co/datasets/datsss/my-dataset/resolve/main/lora/DeborahUTW_Illustrious.safetensors
+
+  - dest_dir: /content/ComfyUI/models/loras
+    filename: DetailerILv2-000008.safetensors
+    url: https://huggingface.co/datasets/datsss/my-dataset/resolve/main/lora/DetailerILv2-000008.safetensors
+
+  - dest_dir: /content/ComfyUI/models/loras
+    filename: JN_Mesugaki_Illus.safetensors
+    url: https://huggingface.co/datasets/datsss/my-dataset/resolve/main/lora/JN_Mesugaki_Illus.safetensors
+
+  - dest_dir: /content/ComfyUI/models/loras
+    filename: MarieDOA-10.safetensors
+    url: https://huggingface.co/datasets/datsss/my-dataset/resolve/main/lora/MarieDOA-10.safetensors
+
+  - dest_dir: /content/ComfyUI/models/loras
+    filename: Nol iIlluLoRA.safetensors
+    url: https://huggingface.co/datasets/datsss/my-dataset/resolve/main/lora/Nol iIlluLoRA.safetensors
+
+  - dest_dir: /content/ComfyUI/models/loras
+    filename: Suisui0.safetensors
+    url: https://huggingface.co/datasets/datsss/my-dataset/resolve/main/lora/Suisui0.safetensors
+
+  - dest_dir: /content/ComfyUI/models/loras
+    filename: Sweep Tosho in game style 3D ILL-v2.safetensors
+    url: https://huggingface.co/datasets/datsss/my-dataset/resolve/main/lora/Sweep Tosho in game style 3D ILL-v2.safetensors
+
+  - dest_dir: /content/ComfyUI/models/loras
+    filename: ahegao-illustriousxl-lora-nochekaiser.safetensors
+    url: https://huggingface.co/datasets/datsss/my-dataset/resolve/main/lora/ahegao-illustriousxl-lora-nochekaiser.safetensors
+
+  - dest_dir: /content/ComfyUI/models/loras
+    filename: darkbbg.safetensors
+    url: https://huggingface.co/datasets/datsss/my-dataset/resolve/main/lora/darkbbg.safetensors
+
+  - dest_dir: /content/ComfyUI/models/loras
+    filename: lora_illustrious_xl_22_in_1_yabuki_kentarou_矢吹健太朗_to_love_ru_出包王女_-_artist_style.safetensors
+    url: https://huggingface.co/datasets/datsss/my-dataset/resolve/main/lora/lora_illustrious_xl_22_in_1_yabuki_kentarou_矢吹健太朗_to_love_ru_出包王女_-_artist_style.safetensors
+
+  - dest_dir: /content/ComfyUI/models/loras
+    filename: lora_milim_nava_tensei_shitara_slime_datta_ken_8_outfits_-_illustrious.safetensors
+    url: https://huggingface.co/datasets/datsss/my-dataset/resolve/main/lora/lora_milim_nava_tensei_shitara_slime_datta_ken_8_outfits_-_illustrious.safetensors
+
+  - dest_dir: /content/ComfyUI/models/loras
+    filename: lora_super_position_sex_pose_concept_version_anima_illustrious_noobai_pony.safetensors
+    url: https://huggingface.co/datasets/datsss/my-dataset/resolve/main/lora/lora_super_position_sex_pose_concept_version_anima_illustrious_noobai_pony.safetensors
+
+  - dest_dir: /content/ComfyUI/models/loras
+    filename: lora_tatsumaki_manga_one_punch_man_illustrious.safetensors
+    url: https://huggingface.co/datasets/datsss/my-dataset/resolve/main/lora/lora_tatsumaki_manga_one_punch_man_illustrious.safetensors
+
+  - dest_dir: /content/ComfyUI/models/loras
+    filename: neisanCIVITAI.safetensors
+    url: https://huggingface.co/datasets/datsss/my-dataset/resolve/main/lora/neisanCIVITAI.safetensors
+
+  - dest_dir: /content/ComfyUI/models/loras
+    filename: rimixO.safetensors
+    url: https://huggingface.co/datasets/datsss/my-dataset/resolve/main/lora/rimixO.safetensors
+
+  - dest_dir: /content/ComfyUI/models/loras
+    filename: stray-pubic-hair-illustriousxl-lora-nochekaiser.safetensors
+    url: https://huggingface.co/datasets/datsss/my-dataset/resolve/main/lora/stray-pubic-hair-illustriousxl-lora-nochekaiser.safetensors
+
+text_encoders:
+  - dest_dir: /content/ComfyUI/models/text_encoders
+    filename: qwen_3_06b_base.safetensors
+    url: https://huggingface.co/datasets/datsss/my-dataset/resolve/main/text_encoders/qwen_3_06b_base.safetensors
+
+ultralytics_bbox:
+  - dest_dir: /content/ComfyUI/models/ultralytics/bbox
+    filename: hand_yolov8n.pt
+    url: https://huggingface.co/datasets/datsss/my-dataset/resolve/main/ultralytics/bbox/hand_yolov8n.pt
+
+upscale_models:
+  - dest_dir: /content/ComfyUI/models/upscale_models
+    filename: 4x-AnimeSharp.pth
+    url: https://huggingface.co/datasets/datsss/my-dataset/resolve/main/upscalers/4x-AnimeSharp.pth
+
+vae:
+  - dest_dir: /content/ComfyUI/models/vae
+    filename: qwen_image_vae.safetensors
+    url: https://huggingface.co/datasets/datsss/my-dataset/resolve/main/vae/qwen_image_vae.safetensors

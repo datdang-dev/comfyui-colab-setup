@@ -20,16 +20,16 @@ python setup_env.py --hf-token=YOUR_HF_TOKEN
 # On Colab terminal:
 git clone https://github.com/datdang-dev/comfyui-colab-setup
 cd comfyui-colab-setup
-python install.py --hf-token=YOUR_HF_TOKEN --use-prebuilt
+python setup_env.py install --hf-token=YOUR_HF_TOKEN --use-prebuilt
 ```
 
 ## Project Structure
 
 ```
 comfyui-colab-setup/
-├── setup_env.py              # Build script — pack env, upload to HF
-├── install.py                # Run script — thin CLI wrapper
+├── setup_env.py              # Consolidated Setup CLI (build, install, fetch)
 ├── config.yaml               # Node list, ComfyUI repo URL (edit this to customize)
+├── download_list.yaml        # Spaced category-grouped models YAML configuration
 ├── requirements.txt          # Core pip dependencies
 ├── colab_notebook.ipynb      # Keep-alive notebook for Colab
 ├── colab_notebook.py         # Keep-alive script (alternative to notebook)
@@ -50,6 +50,17 @@ Packages the entire Colab environment into two tarballs and uploads to HF:
 - `custom_nodes.tar.gz` — all 16 custom nodes
 - `comfyui-env.tar.gz` — Python site-packages + ComfyUI core
 
+**Features & Version Management:**
+- **Default Checkout**: Automatically fetches remote git tags and checks out the **latest released tag** (e.g., `v0.26.2`) instead of checking out the unstable `master` development branch.
+- **Commit/Version Pinning**: Supports pinning specific versions, release tags, branches, or commit hashes using the `--comfy-version` parameter:
+  ```bash
+  python setup_env.py --hf-token=YOUR_TOKEN --comfy-version=v0.26.2
+  # Or pin a specific commit hash:
+  python setup_env.py --hf-token=YOUR_TOKEN --comfy-version=b874bd2b
+  ```
+- **Pinnings Records**: Writes the exact compiled commit hash to `comfyui_commit.txt` inside the `ComfyUI/` archive root for verification.
+- **Dependency Up-To-Date**: Automatically pre-installs/upgrades all package requirements from `ComfyUI/requirements.txt` into the environment before compressing, ensuring packages are fully matched with the target commit hash.
+
 **Optimizations:**
 - Uses `pigz` (parallel gzip) for 2-4x faster compression on multi-core instances
 - Excludes `.git` / `__pycache__` from archives to reduce size
@@ -57,18 +68,23 @@ Packages the entire Colab environment into two tarballs and uploads to HF:
 - Timestamped logging to console + `/content/build.log`
 - Reads node list from `config.yaml` (not hardcoded)
 
-## Run Script (`install.py`)
+## Installation CLI (`setup_env.py install`)
 
-Two modes:
-- `--use-prebuilt` — downloads pre-built env from HF (fast, ~2min)
-- Without flag — fresh install from scratch
+Usage:
+*   `python setup_env.py install --use-prebuilt` — downloads pre-built env from HF (fast, ~2min)
+*   `python setup_env.py install` — fresh install from scratch
 
 Full flow:
 1. Clone ComfyUI (or load prebuilt)
 2. Install custom nodes in background (parallel, streamed to terminal)
 3. Interactive model selection (while nodes install)
-4. Download models (hf_transfer, 8 parallel)
+4. Download models (hf_transfer, parallel)
 5. Wait for node install to finish
+
+## Fetch Models CLI (`setup_env.py fetch`)
+
+Queries your Hugging Face dataset to dynamically build/update `download_list.yaml` grouped by category headers:
+*   `python setup_env.py fetch --repo-id=datsss/my-dataset`
 
 ## Configuration
 

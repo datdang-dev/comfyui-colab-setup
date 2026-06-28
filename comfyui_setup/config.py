@@ -11,7 +11,7 @@ COMFYUI_DIR = WORKSPACE / "ComfyUI"
 CUSTOM_NODES_DIR = COMFYUI_DIR / "custom_nodes"
 CONFIG_YAML = Path(__file__).parent.parent / "config.yaml"
 LOG_FILE = WORKSPACE / "comfyui_setup.log"
-DOWNLOAD_LIST_FILE = str(WORKSPACE / "download_list.json")
+DOWNLOAD_LIST_FILE = str(WORKSPACE / "download_list.yaml")
 
 # ── ComfyUI ──
 COMFYUI_REPO = "https://github.com/comfyanonymous/ComfyUI.git"
@@ -94,6 +94,41 @@ def get_comfyui_repo(config_path=None):
     cfg = load_config_yaml(config_path)
     comfyui_cfg = cfg.get("comfyui", {})
     return comfyui_cfg.get("repo", COMFYUI_REPO)
+
+
+def get_comfyui_version(config_path=None):
+    """Return ComfyUI target branch/tag/version from config.yaml or empty string."""
+    cfg = load_config_yaml(config_path)
+    comfyui_cfg = cfg.get("comfyui", {})
+    return comfyui_cfg.get("version", comfyui_cfg.get("branch", ""))
+
+
+def get_default_models(config_path=None):
+    """Return formatted models list from config.yaml."""
+    cfg = load_config_yaml(config_path)
+    models_raw = cfg.get("models", [])
+    if not models_raw:
+        return []
+
+    result = []
+    for m in models_raw:
+        if not isinstance(m, dict):
+            continue
+        name = m.get("name", "")
+        url = m.get("url", "")
+        cat = m.get("category", "checkpoint")
+
+        # Map category to directory name
+        dir_name = CATEGORIES.get(cat, cat)
+        dest_dir = str(COMFYUI_DIR / "models" / dir_name)
+
+        if name and url:
+            result.append({
+                "filename": name,
+                "url": url,
+                "dest_dir": dest_dir
+            })
+    return result
 
 
 def get_site_packages():
