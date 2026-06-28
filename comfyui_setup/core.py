@@ -106,10 +106,15 @@ def load_prebuilt(workspace=None, auth_token=None, env_repo=None):
     # 3. Restore site-packages into system Python via .pth file (instantaneous)
     site_pkg = config.get_site_packages()
     sp_dir = ws / "site-packages"
+    if not sp_dir.exists():
+        sp_dir = ws / "dist-packages"
+        
     if sp_dir.exists():
         log.info(f"  Registering site-packages dynamically via .pth...")
         pth_file = site_pkg / "comfyui_env.pth"
         pth_file.write_text(f"{sp_dir}\n", encoding="utf-8")
+    else:
+        log.warning("  No site-packages or dist-packages directory found to link!")
     log.info(f"  {Color.OKGREEN}Python environment linked instantly{Color.ENDC}")
 
     # 4. Clone ComfyUI core dynamically if missing
